@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>رقيب لايت | تتبع ناقلات المشتقات النفطية</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: Tahoma, Arial, sans-serif;
+    background: #0f1115;
+    color: #eee;
+    margin: 0;
+    min-height: 100vh;
+  }
+  .container { max-width: 1100px; margin: 0 auto; padding: 12px; }
+  .card {
+    background: #1a1d24;
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 14px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  }
+  h1 { font-size: 20px; margin: 0 0 4px; color: #ff8a3d; }
+  h2 { font-size: 16px; margin: 0 0 12px; }
+  .subtitle { font-size: 12px; color: #999; margin-bottom: 12px; }
+  input, select {
+    padding: 9px;
+    margin: 4px 0;
+    border-radius: 8px;
+    border: 1px solid #333;
+    background: #12141a;
+    color: #eee;
+    font-size: 13px;
+  }
+  input[type=email], input[type=password], select.full { width: 100%; }
+  button {
+    background: #ff6f00;
+    color: white;
+    border: none;
+    padding: 9px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    margin: 3px;
+  }
+  button.secondary { background: #2b3140; }
+  button:hover { opacity: 0.9; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th, td { padding: 8px 5px; text-align: center; border-bottom: 1px solid #2a2e37; white-space: nowrap; }
+  th { color: #9fd3ff; font-size: 11px; }
+  .table-wrap { overflow-x: auto; }
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: bold;
+  }
+  .badge.good { background: #17402a; color: #3ecf6b; }
+  .badge.mid { background: #4a3a10; color: #ffcf5c; }
+  .badge.bad { background: #4a2020; color: #ff7b7b; }
+  .badge.neutral { background: #232a3a; color: #9fd3ff; }
+  .tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .tab { padding: 8px 14px; background: #1a1d24; border-radius: 8px; cursor: pointer; font-size: 12px; }
+  .tab.active { background: #ff6f00; }
+  .hidden { display: none !important; }
+  #errorBox { color: #ff7b7b; font-size: 13px; margin-top: 6px; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+  .kpi { background: #12141a; border-radius: 10px; padding: 14px; text-align: center; border-top: 3px solid #ff6f00; }
+  .kpi .lbl { font-size: 12px; color: #999; margin-bottom: 6px; }
+  .kpi.warn { border-top-color: #ff7b7b; }
+  .kpi.ok { border-top-color: #3ecf6b; }
+  .alert-item {
+    background: #241c0f; border-right: 4px solid #ffb84d; padding: 10px 12px;
+    border-radius: 8px; margin-bottom: 8px; font-size: 13px; display: flex;
+    justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+  .alert-item.high { background: #2a1414; border-right-color: #ff5c5c; }
+  .alert-item small { color: #999; }
+  .route-row { display: flex; align-items: center; gap: 6px; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; background: #3ecf6b; flex-shrink: 0; }
+  .dot.passed { background: #3ecf6b; }
+  .dot.current { background: #ff8a3d; box-shadow: 0 0 0 4px rgba(255,138,61,.25); }
+  .dot.pending { background: #333; }
+  .line { flex: 1; height: 2px; background: #333; }
+  .line.done { background: #3ecf6b; }
+  .status { text-align: center; padding: 30px 0; color: #999; }
+  .live-dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:#3ecf6b; margin-left:6px; animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%{opacity:1} 50%{opacity:.3} 100%{opacity:1} }
+  .risk-bar-wrap { background:#12141a; border-radius:5px; height:9px; width:120px; overflow:hidden; }
+  .risk-bar-fill { height:100%; border-radius:5px; }
+  .note-box { background:#12141a; border-radius:10px; padding:12px; font-size:12px; color:#aab; line-height:1.8; }
+  .depot-row { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+  .depot-row .name { width:120px; font-size:12px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <div id="loginScreen" class="card">
+    <h1>🛢️ رقيب لايت</h1>
+    <div class="subtitle">نسخة سريعة — تتبع نوعي (بدون أرقام) لناقلات المشتقات النفطية</div>
+    <select id="loginRole" class="full">
+      <option value="ministry">وزارة النفط — الإدارة العامة</option>
+      <option value="depot">مدير مصفى / مستودع</option>
+      <option value="station">مدير محطة وقود</option>
+      <option value="inspector">مفتش ميداني</option>
+    </select>
+    <input type="email" id="loginEmail" placeholder="الإيميل" value="demo@oil.gov.iq">
+    <input type="password" id="loginPassword" placeholder="كلمة السر" value="demo123">
+    <button onclick="doLogin()">دخول للنموذج التجريبي</button>
+    <div id="errorBox"></div>
+  </div>
+
+  <div id="appScreen" class="hidden">
+    <div class="card" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+      <div>
+        <div style="font-weight:bold;">🛢️ رقيب لايت <span class="live-dot"></span><span style="font-size:11px;color:#3ecf6b;">بث حي (محاكاة)</span></div>
+        <div id="userRoleLabel" style="font-size:12px; color:#999;"></div>
+      </div>
+      <button class="secondary" onclick="doLogout()">تسجيل خروج</button>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="dashboard" onclick="switchTab('dashboard')">نظرة عامة</div>
+      <div class="tab" data-tab="tankers" onclick="switchTab('tankers')">تتبع الناقلات</div>
+      <div class="tab" data-tab="alerts" onclick="switchTab('alerts')">التنبيهات</div>
+      <div class="tab" data-tab="risk" onclick="switchTab('risk')">تحليل المخاطر</div>
+      <div class="tab" data-tab="about" onclick="switchTab('about')">عن الفكرة</div>
+    </div>
+
+    <div id="tab-dashboard"></div>
+    <div id="tab-tankers" class="hidden"></div>
+    <div id="tab-alerts" class="hidden"></div>
+    <div id="tab-risk" class="hidden"></div>
+    <div id="tab-about" class="hidden"></div>
+  </div>
+
+</div>
+
+<script>
+/* ============ Mock reference data (no figures shown in UI) ============ */
+const DEPOTS = ['مصفى الدورة', 'مصفى بيجي', 'مستودع الشعيبة', 'مصفى كركوك'];
+const PROVINCES = ['بغداد', 'البصرة', 'نينوى', 'أربيل', 'النجف', 'كربلاء'];
+const PRODUCTS = ['بنزين', 'كاز', 'كازوييل'];
+const DRIVER_NAMES = ['محمد كاظم', 'علي حسين', 'أحمد جبار', 'حيدر صالح', 'كرار ناصر', 'مصطفى عبد', 'حسين علوان', 'عمار توفيق'];
+const CHECKPOINTS = ['بوابة المصفى', 'نقطة تفتيش', 'مدخل المحافظة', 'المحطة'];
+const CODES = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+
+let currentRole = 'ministry';
+let tankers = [];
+let alerts = [];
+let riskByDriver = {};
+
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function genTanker(code) {
+  return {
+    code: 'TK-' + code,
+    driver: pick(DRIVER_NAMES),
+    depot: pick(DEPOTS),
+    dest: pick(PROVINCES),
+    product: pick(PRODUCTS),
+    progress: 0,
+    checkpointIdx: 0,
+    status: 'in_transit', // in_transit, deviation, delivered_ok, delivered_flag
+    deviated: Math.random() < 0.15,
+    deviationApplied: false
+  };
+}
+
+function initData() {
+  tankers = CODES.map(genTanker);
+  alerts = [];
+  riskByDriver = {};
+}
+
+/* ============ Simulation engine (internal math only, never shown as numbers) ============ */
+function tick() {
+  tankers.forEach(t => {
+    if (t.status.startsWith('delivered')) return;
+    t.progress += 0.03 + Math.random() * 0.06;
+    t.checkpointIdx = Math.min(CHECKPOINTS.length - 1, Math.floor(t.progress * CHECKPOINTS.length));
+
+    if (t.deviated && !t.deviationApplied && t.progress > 0.45) {
+      t.deviationApplied = true;
+      t.status = 'deviation';
+      pushAlert({
+        level: 'high',
+        title: `انحراف مسار وشبهة تفريغ غير مصرح — الناقلة ${t.code}`,
+        detail: `توقفت خارج المسار المعتمد بين ${t.depot} ووجهتها في ${t.dest}.`
+      });
+      bumpRisk(t.driver, 'high');
+    }
+
+    if (t.progress >= 1 && !t.status.startsWith('delivered')) {
+      const flagged = t.deviated || Math.random() < 0.25;
+      t.status = flagged ? 'delivered_flag' : 'delivered_ok';
+      if (!t.deviated && flagged) {
+        pushAlert({
+          level: 'mid',
+          title: `فرق كمية ملحوظ عند التسليم — الناقلة ${t.code}`,
+          detail: `الكمية المستلمة عند ${t.dest} أقل من المرسلة عن الحد المسموح به.`
+        });
+        bumpRisk(t.driver, 'mid');
+      }
+    }
+  });
+
+  if (Math.random() < 0.18) {
+    const idx = tankers.findIndex(t => t.status.startsWith('delivered'));
+    if (idx !== -1 && tankers.filter(t => t.status.startsWith('delivered')).length > 2) {
+      tankers[idx] = genTanker(tankers[idx].code.replace('TK-', ''));
+    }
+  }
+
+  render();
+}
+
+function pushAlert(a) {
+  a.id = Math.random().toString(36).slice(2);
+  a.fresh = true;
+  alerts.unshift(a);
+  if (alerts.length > 30) alerts.pop();
+  setTimeout(() => { a.fresh = false; if (activeTab() === 'alerts') render(); }, 6000);
+}
+
+function bumpRisk(driver, level) {
+  const weight = level === 'high' ? 2 : 1;
+  riskByDriver[driver] = (riskByDriver[driver] || 0) + weight;
+}
+
+/* ============ Auth ============ */
+function doLogin() {
+  currentRole = document.getElementById('loginRole').value;
+  const email = document.getElementById('loginEmail').value;
+  if (!email) {
+    document.getElementById('errorBox').textContent = 'الرجاء إدخال الإيميل';
+    return;
+  }
+  document.getElementById('errorBox').textContent = '';
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('appScreen').classList.remove('hidden');
+  const roleLabels = {
+    ministry: 'وزارة النفط — الإدارة العامة',
+    depot: 'مدير مصفى / مستودع',
+    station: 'مدير محطة وقود',
+    inspector: 'مفتش ميداني'
+  };
+  document.getElementById('userRoleLabel').textContent = roleLabels[currentRole];
+  initData();
+  render();
+  if (window.__simInterval) clearInterval(window.__simInterval);
+  window.__simInterval = setInterval(tick, 2200);
+}
+
+function doLogout() {
+  if (window.__simInterval) clearInterval(window.__simInterval);
+  document.getElementById('appScreen').classList.add('hidden');
+  document.getElementById('loginScreen').classList.remove('hidden');
+}
+
+/* ============ Tabs ============ */
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  ['dashboard','tankers','alerts','risk','about'].forEach(n => {
+    document.getElementById('tab-' + n).classList.toggle('hidden', n !== name);
+  });
+  render();
+}
+function activeTab() { return document.querySelector('.tab.active').dataset.tab; }
+
+/* ============ Render ============ */
+function render() {
+  const tab = activeTab();
+  if (tab === 'dashboard') renderDashboard();
+  else if (tab === 'tankers') renderTankers();
+  else if (tab === 'alerts') renderAlerts();
+  else if (tab === 'risk') renderRisk();
+  else if (tab === 'about') renderAbout();
+}
+
+function renderDashboard() {
+  const el = document.getElementById('tab-dashboard');
+  const hasDeviation = tankers.some(t => t.status === 'deviation');
+  const hasAlerts = alerts.length > 0;
+  const hasHighAlert = alerts.some(a => a.level === 'high');
+  const fleetState = hasDeviation ? { txt: 'يتطلب انتباه', cls: 'warn' } : { txt: 'طبيعي', cls: 'ok' };
+
+  el.innerHTML = `
+    <div class="card">
+      <h2>نظرة عامة على الأسطول</h2>
+      <div class="kpi-grid">
+        <div class="kpi ${fleetState.cls}"><div class="lbl">الوضع العام للأسطول</div><span class="badge ${fleetState.cls === 'ok' ? 'good' : 'bad'}">${fleetState.txt}</span></div>
+        <div class="kpi ok"><div class="lbl">حركة النقل</div><span class="badge good">نشطة ومستمرة</span></div>
+        <div class="kpi ${hasDeviation ? 'warn' : ''}"><div class="lbl">انحرافات المسار</div><span class="badge ${hasDeviation ? 'bad' : 'good'}">${hasDeviation ? 'يوجد حالياً' : 'لا يوجد'}</span></div>
+        <div class="kpi ${hasHighAlert ? 'warn' : ''}"><div class="lbl">التنبيهات الحرجة</div><span class="badge ${hasHighAlert ? 'bad' : 'good'}">${hasHighAlert ? 'توجد تنبيهات' : 'لا توجد'}</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>مؤشر الفاقد النوعي حسب المصفى</h2>
+      <div class="subtitle">تقدير نوعي فقط — بدون عرض قيم رقمية</div>
+      <div id="depotBars"></div>
+    </div>
+    <div class="card">
+      <h2>آخر التنبيهات</h2>
+      <div>${alerts.slice(0, 4).map(alertHtml).join('') || '<div class="status">لا توجد تنبيهات حالياً</div>'}</div>
+    </div>
+  `;
+
+  const byDepot = {};
+  DEPOTS.forEach(d => byDepot[d] = { total: 0, flagged: 0 });
+  tankers.filter(t => t.status.startsWith('delivered')).forEach(t => {
+    byDepot[t.depot].total++;
+    if (t.status === 'delivered_flag') byDepot[t.depot].flagged++;
+  });
+  const bars = document.getElementById('depotBars');
+  bars.innerHTML = DEPOTS.map(d => {
+    const v = byDepot[d];
+    const ratio = v.total ? v.flagged / v.total : 0;
+    const level = ratio > 0.5 ? { color: '#ff5c5c', w: 90 } : ratio > 0.2 ? { color: '#ffcf5c', w: 55 } : { color: '#3ecf6b', w: 20 };
+    return `<div class="depot-row">
+      <div class="name">${d}</div>
+      <div class="risk-bar-wrap"><div class="risk-bar-fill" style="width:${v.total ? level.w : 8}%;background:${v.total ? level.color : '#333'};"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function alertHtml(a) {
+  return `
+    <div class="alert-item ${a.level === 'high' ? 'high' : ''}">
+      <div>
+        <div><strong>${a.title}</strong></div>
+        <div style="margin-top:3px;">${a.detail}</div>
+      </div>
+      <small>${a.fresh ? '🔴 جديد' : 'سابق'}</small>
+    </div>
+  `;
+}
+
+function renderTankers() {
+  const el = document.getElementById('tab-tankers');
+  el.innerHTML = `
+    <div class="card">
+      <h2>تتبع الناقلات لحظياً</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>الناقلة</th><th>السائق</th><th>المصفى/المستودع</th><th>الوجهة</th><th>المادة</th>
+              <th>المسار</th><th>الحالة</th>
+            </tr>
+          </thead>
+          <tbody>${tankers.map(tankerRow).join('')}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function tankerRow(t) {
+  const statusMap = {
+    in_transit: '<span class="badge neutral">قيد النقل</span>',
+    deviation: '<span class="badge bad">⚠ انحراف مسار</span>',
+    delivered_ok: '<span class="badge good">تم التسليم بنجاح</span>',
+    delivered_flag: '<span class="badge mid">تم التسليم — فرق ملحوظ</span>'
+  };
+  const routeHtml = CHECKPOINTS.map((cp, i) => {
+    const cls = i < t.checkpointIdx ? 'passed' : i === t.checkpointIdx ? 'current' : 'pending';
+    const lineCls = i < t.checkpointIdx ? 'done' : '';
+    return `<div class="dot ${cls}" title="${cp}"></div>` + (i < CHECKPOINTS.length - 1 ? `<div class="line ${lineCls}"></div>` : '');
+  }).join('');
+
+  return `
+    <tr>
+      <td style="color:#ff8a3d;font-weight:bold;">${t.code}</td>
+      <td>${t.driver}</td>
+      <td>${t.depot}</td>
+      <td>${t.dest}</td>
+      <td>${t.product}</td>
+      <td style="min-width:130px;"><div class="route-row">${routeHtml}</div></td>
+      <td>${statusMap[t.status]}</td>
+    </tr>
+  `;
+}
+
+function renderAlerts() {
+  const el = document.getElementById('tab-alerts');
+  el.innerHTML = `
+    <div class="card">
+      <h2>سجل التنبيهات</h2>
+      <div class="subtitle">تُولَّد تلقائياً عند رصد انحراف مسار أو فرق كمية غير مبرر — بدون عرض قيم رقمية</div>
+      <div>${alerts.map(alertHtml).join('') || '<div class="status">لا توجد تنبيهات حالياً</div>'}</div>
+    </div>
+  `;
+}
+
+function renderRisk() {
+  const el = document.getElementById('tab-risk');
+  const rows = Object.entries(riskByDriver).sort((a, b) => b[1] - a[1]);
+  el.innerHTML = `
+    <div class="card">
+      <h2>تحليل المخاطر حسب السائق</h2>
+      <div class="subtitle">تصنيف نوعي تراكمي بناءً على تكرار الانحرافات وفروقات الكمية — بدون درجات رقمية</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>السائق</th><th>التصنيف</th></tr></thead>
+          <tbody>
+            ${rows.length ? rows.map(([driver, score]) => `
+              <tr><td>${driver}</td><td>${riskBadge(score)}</td></tr>
+            `).join('') : `<tr><td colspan="2" class="status">لا توجد بيانات كافية بعد</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function riskBadge(score) {
+  if (score >= 4) return '<span class="badge bad">خطورة عالية</span>';
+  if (score >= 2) return '<span class="badge mid">متوسطة</span>';
+  return '<span class="badge good">منخفضة</span>';
+}
+
+function renderAbout() {
+  const el = document.getElementById('tab-about');
+  el.innerHTML = `
+    <div class="card">
+      <h2>عن فكرة "رقيب"</h2>
+      <div class="note-box">
+        <p><strong>المشكلة:</strong> فرق موثق بين كميات المشتقات النفطية المرسَلة من المصافي والمستودعات وما يصل فعلاً لمحطات التوزيع، بسبب التلاعب أو التفريغ في السوق السوداء أثناء النقل، مع غياب نظام مركزي موحّد يربط وزارة النفط بالمصافي والمحطات لحظياً.</p>
+        <p><strong>الحل المقترح:</strong> منصة موحدة تربط أجهزة تتبع موقع وقارئات كمية ذكية على الناقلات بمنظومة مراقبة مركزية، تقارن آلياً بين الكمية المحمَّلة والمسلَّمة، وترصد أي توقف أو انحراف عن المسار المعتمد، وتولّد تنبيهات فورية وتصنيف مخاطر لكل سائق ومسار ومحطة.</p>
+        <p><strong>القيمة المضافة لوزارة النفط:</strong></p>
+        <ul>
+          <li>خفض الفاقد والتهريب عبر رقابة لحظية بدل التدقيق الورقي اللاحق</li>
+          <li>تصنيف مخاطر واضح لكل سائق ومسار يدعم قرارات التحقيق والمساءلة</li>
+          <li>قابلية للتوسع مستقبلاً لتشمل مراقبة حرق الغاز المصاحب وصيانة الحقول</li>
+        </ul>
+        <p><strong>ملاحظة:</strong> هذي نسخة سريعة ومبسّطة (بدون أرقام أو قيم إحصائية ظاهرة) تركّز على آلية العمل والتدفق العام للنظام فقط، مناسبة لعرض تقديمي مختصر. النسخة الكاملة (raqib-oil-tracking.html) تعرض القيم والنسب الفعلية والرسوم البيانية التفصيلية.</p>
+      </div>
+    </div>
+  `;
+}
+</script>
+</body>
+</html>
