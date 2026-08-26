@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>منصّة | الطلبات والتصاريح ودفتر المناوبة الرقمي</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: Tahoma, Arial, sans-serif;
+    background: #0f1115;
+    color: #eee;
+    margin: 0;
+    min-height: 100vh;
+  }
+  .container { max-width: 1100px; margin: 0 auto; padding: 12px; }
+  .card {
+    background: #1a1d24;
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 14px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  }
+  h1 { font-size: 20px; margin: 0 0 4px; color: #ff8a3d; }
+  h2 { font-size: 16px; margin: 0 0 12px; }
+  h3 { font-size: 14px; margin: 12px 0 8px; color: #9fd3ff; }
+  .subtitle { font-size: 12px; color: #999; margin-bottom: 12px; }
+  label { display: block; font-size: 12px; color: #9fd3ff; margin: 8px 0 3px; }
+  input, select, textarea {
+    padding: 9px;
+    border-radius: 8px;
+    border: 1px solid #333;
+    background: #12141a;
+    color: #eee;
+    font-size: 13px;
+    width: 100%;
+    font-family: inherit;
+  }
+  textarea { resize: vertical; min-height: 60px; }
+  button {
+    background: #ff6f00;
+    color: white;
+    border: none;
+    padding: 9px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    margin: 3px 0;
+  }
+  button.secondary { background: #2b3140; }
+  button.danger { background: #7a2020; }
+  button.small { padding: 5px 10px; font-size: 11px; margin: 2px; }
+  button:hover { opacity: 0.9; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th, td { padding: 8px 5px; text-align: center; border-bottom: 1px solid #2a2e37; }
+  th { color: #9fd3ff; font-size: 11px; }
+  .table-wrap { overflow-x: auto; }
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: bold; white-space: nowrap;
+  }
+  .badge.good { background: #17402a; color: #3ecf6b; }
+  .badge.mid { background: #4a3a10; color: #ffcf5c; }
+  .badge.bad { background: #4a2020; color: #ff7b7b; }
+  .badge.neutral { background: #232a3a; color: #9fd3ff; }
+  .tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .tab { padding: 8px 14px; background: #1a1d24; border-radius: 8px; cursor: pointer; font-size: 12px; }
+  .tab.active { background: #ff6f00; }
+  .hidden { display: none !important; }
+  #errorBox { color: #ff7b7b; font-size: 13px; margin-top: 6px; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+  .kpi { background: #12141a; border-radius: 10px; padding: 12px; text-align: center; border-top: 3px solid #ff6f00; }
+  .kpi .val { font-size: 22px; font-weight: bold; color: #fff; }
+  .kpi .lbl { font-size: 11px; color: #999; margin-top: 4px; }
+  .status { text-align: center; padding: 24px 0; color: #999; }
+  .item-card {
+    background: #12141a; border-radius: 10px; padding: 12px; margin-bottom: 10px;
+    border-right: 4px solid #333;
+  }
+  .item-card.pending { border-right-color: #ffb84d; }
+  .item-card.approved { border-right-color: #3ecf6b; }
+  .item-card.rejected { border-right-color: #ff5c5c; }
+  .item-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+  .item-meta { font-size: 11px; color: #999; }
+  .item-actions { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .steps-row { display: flex; align-items: center; gap: 4px; margin-top: 6px; font-size: 11px; }
+  .step-chip { padding: 3px 8px; border-radius: 12px; background: #232a3a; color: #789; }
+  .step-chip.done { background: #17402a; color: #3ecf6b; }
+  .step-chip.current { background: #4a3a10; color: #ffcf5c; }
+  .step-arrow { color: #444; }
+  .checklist-item { display: flex; align-items: center; gap: 6px; font-size: 12px; margin-bottom: 4px; }
+  .checklist-item label { display: inline; margin: 0; white-space: nowrap; }
+  .checklist-item input[type=checkbox] { width: auto; flex-shrink: 0; }
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .filters input, .filters select { width: auto; min-width: 140px; }
+  .timeline-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #2a2e37; }
+  .timeline-time { min-width: 90px; font-size: 11px; color: #9fd3ff; flex-shrink: 0; }
+  .timeline-type { flex-shrink: 0; }
+  .note-box { background:#12141a; border-radius:10px; padding:12px; font-size:12px; color:#aab; line-height:1.8; }
+  .role-tag { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: #232a3a; color: #9fd3ff; margin-right: 6px; }
+  .top-actions { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <div id="loginScreen" class="card">
+    <h1>🗂️ منصّة</h1>
+    <div class="subtitle">النظام الرقمي الموحد لوزارة النفط — الطلبات والموافقات، التصاريح، ودفتر المناوبة (نموذج تجريبي)</div>
+    <label>الدور الوظيفي</label>
+    <select id="loginRole">
+      <option value="employee">موظف</option>
+      <option value="supervisor">مسؤول مباشر / رئيس قسم</option>
+      <option value="gm">مدير عام</option>
+    </select>
+    <label>الاسم</label>
+    <input type="text" id="loginName" value="أحمد جبار" placeholder="اسمك">
+    <div style="margin-top:10px;">
+      <button onclick="doLogin()">دخول للنموذج التجريبي</button>
+      <button class="secondary" onclick="resetDemoData()">إعادة تعيين البيانات التجريبية</button>
+    </div>
+    <div id="errorBox"></div>
+  </div>
+
+  <div id="appScreen" class="hidden">
+    <div class="card top-actions">
+      <div>
+        <div style="font-weight:bold;">🗂️ منصّة وزارة النفط</div>
+        <div id="userLabel" style="font-size:12px; color:#999;"></div>
+      </div>
+      <button class="secondary" onclick="doLogout()">تسجيل خروج</button>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="dashboard" onclick="switchTab('dashboard')">لوحة عامة</div>
+      <div class="tab" data-tab="requests" onclick="switchTab('requests')">الطلبات والموافقات</div>
+      <div class="tab" data-tab="permits" onclick="switchTab('permits')">التصاريح الرقمية</div>
+      <div class="tab" data-tab="logbook" onclick="switchTab('logbook')">دفتر المناوبة</div>
+      <div class="tab" data-tab="about" onclick="switchTab('about')">عن الفكرة</div>
+    </div>
+
+    <div id="tab-dashboard"></div>
+    <div id="tab-requests" class="hidden"></div>
+    <div id="tab-permits" class="hidden"></div>
+    <div id="tab-logbook" class="hidden"></div>
+    <div id="tab-about" class="hidden"></div>
+  </div>
+
+</div>
+
+<script>
+/* ============ Config ============ */
+const STORAGE_KEY = 'wizara_demo_state_v1';
+const ROLE_LABELS = { employee: 'موظف', supervisor: 'مسؤول مباشر / رئيس قسم', gm: 'مدير عام' };
+const REQUEST_TYPES = {
+  'اجازة': ['مسؤول مباشر'],
+  'مستلزمات': ['مسؤول مباشر'],
+  'صيانة': ['مسؤول مباشر'],
+  'طلب كبير': ['مسؤول مباشر', 'مدير عام']
+};
+const ROLE_TO_STEP = { supervisor: 'مسؤول مباشر', gm: 'مدير عام' };
+const PERMIT_TYPES = ['دخول عام', 'أعمال ساخنة', 'دخول مساحة مغلقة'];
+const SAFETY_CHECKLIST = ['تم تأمين الموقع', 'تجهيزات السلامة متوفرة', 'تم إبلاغ فريق الطوارئ', 'تم فحص المعدات'];
+const LOGBOOK_TYPES = ['عادي', 'تنبيه', 'عطل', 'تسليم مناوبة'];
+
+let currentUser = null; // { name, role }
+let state = null;
+
+/* ============ Seed / persistence ============ */
+function seedState() {
+  return {
+    requests: [
+      { id: 'RQ-1001', type: 'اجازة', title: 'إجازة اعتيادية 3 أيام', description: 'إجازة اعتيادية لظروف عائلية.', requester: 'مصطفى عبد', currentStep: 0, status: 'قيد المراجعة', history: [] },
+      { id: 'RQ-1002', type: 'صيانة', title: 'صيانة مضخة رفع صناعي', description: 'طلب صيانة عاجلة لمضخة ESP في البئر رقم 14.', requester: 'حيدر صالح', currentStep: 1, status: 'معتمد نهائياً', history: [
+        { step: 'مسؤول مباشر', actor: 'أحمد جبار', action: 'موافقة', date: 'منذ يومين' }
+      ]},
+      { id: 'RQ-1003', type: 'طلب كبير', title: 'استحداث خط أنابيب ثانوي', description: 'طلب اعتماد ميزانية لاستحداث خط أنابيب ثانوي لنقل الكاز.', requester: 'كرار ناصر', currentStep: 1, status: 'قيد المراجعة', history: [
+        { step: 'مسؤول مباشر', actor: 'أحمد جبار', action: 'موافقة', date: 'أمس' }
+      ]}
+    ],
+    permits: [
+      { id: 'PM-2001', type: 'أعمال ساخنة', location: 'وحدة التقطير - المصفى', requester: 'علي حسين', checklist: [true, true, false, true], status: 'بانتظار الموافقة' },
+      { id: 'PM-2002', type: 'دخول مساحة مغلقة', location: 'خزان تخزين رقم 3', requester: 'عمار توفيق', checklist: [true, true, true, true], status: 'معتمد' }
+    ],
+    logbook: [
+      { id: 'LB-3001', time: 'اليوم 07:00', shift: 'صباحية', author: 'أحمد جبار', type: 'تسليم مناوبة', note: 'تسليم المناوبة الليلية دون ملاحظات. جميع القراءات طبيعية.' },
+      { id: 'LB-3002', time: 'اليوم 09:15', shift: 'صباحية', author: 'حسين علوان', type: 'تنبيه', note: 'ارتفاع طفيف بضغط خط النقل الرئيسي، تمت المتابعة والعودة للمعدل الطبيعي.' }
+    ],
+    nextId: { rq: 1004, pm: 2003, lb: 3003 }
+  };
+}
+
+function loadState() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (raw) {
+    try { return JSON.parse(raw); } catch (e) { /* fallthrough */ }
+  }
+  const fresh = seedState();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
+  return fresh;
+}
+
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function resetDemoData() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(seedState()));
+  document.getElementById('errorBox').style.color = '#3ecf6b';
+  document.getElementById('errorBox').textContent = 'تمت إعادة تعيين البيانات التجريبية بنجاح.';
+}
+
+/* ============ Auth ============ */
+function doLogin() {
+  const role = document.getElementById('loginRole').value;
+  const name = document.getElementById('loginName').value.trim();
+  if (!name) {
+    document.getElementById('errorBox').style.color = '#ff7b7b';
+    document.getElementById('errorBox').textContent = 'الرجاء إدخال الاسم';
+    return;
+  }
+  currentUser = { name, role };
+  state = loadState();
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('appScreen').classList.remove('hidden');
+  document.getElementById('userLabel').innerHTML =
+    `<span class="role-tag">${ROLE_LABELS[role]}</span>${name}`;
+  render();
+}
+
+function doLogout() {
+  currentUser = null;
+  document.getElementById('appScreen').classList.add('hidden');
+  document.getElementById('loginScreen').classList.remove('hidden');
+  document.getElementById('errorBox').textContent = '';
+}
+
+/* ============ Tabs ============ */
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  ['dashboard','requests','permits','logbook','about'].forEach(n => {
+    document.getElementById('tab-' + n).classList.toggle('hidden', n !== name);
+  });
+  render();
+}
+function activeTab() { return document.querySelector('.tab.active').dataset.tab; }
+
+function render() {
+  const tab = activeTab();
+  if (tab === 'dashboard') renderDashboard();
+  else if (tab === 'requests') renderRequests();
+  else if (tab === 'permits') renderPermits();
+  else if (tab === 'logbook') renderLogbook();
+  else if (tab === 'about') renderAbout();
+}
+
+/* ============ Dashboard ============ */
+function renderDashboard() {
+  const el = document.getElementById('tab-dashboard');
+  const pendingReq = state.requests.filter(r => r.status === 'قيد المراجعة').length;
+  const approvedReq = state.requests.filter(r => r.status === 'معتمد نهائياً').length;
+  const pendingPermits = state.permits.filter(p => p.status === 'بانتظار الموافقة').length;
+  const activePermits = state.permits.filter(p => p.status === 'معتمد').length;
+  const todayLog = state.logbook.length;
+
+  const myPendingApprovals = currentUser.role !== 'employee'
+    ? state.requests.filter(r => r.status === 'قيد المراجعة' && REQUEST_TYPES[r.type][r.currentStep] === ROLE_TO_STEP[currentUser.role]).length
+    : 0;
+
+  el.innerHTML = `
+    <div class="card">
+      <h2>نظرة عامة</h2>
+      <div class="kpi-grid">
+        <div class="kpi"><div class="val">${state.requests.length}</div><div class="lbl">إجمالي الطلبات</div></div>
+        <div class="kpi ${pendingReq ? 'warn' : ''}"><div class="val">${pendingReq}</div><div class="lbl">طلبات قيد المراجعة</div></div>
+        <div class="kpi"><div class="val">${approvedReq}</div><div class="lbl">طلبات معتمدة نهائياً</div></div>
+        <div class="kpi"><div class="val">${activePermits}</div><div class="lbl">تصاريح عمل نشطة</div></div>
+        <div class="kpi ${pendingPermits ? 'warn' : ''}"><div class="val">${pendingPermits}</div><div class="lbl">تصاريح بانتظار الموافقة</div></div>
+        <div class="kpi"><div class="val">${todayLog}</div><div class="lbl">قيود دفتر المناوبة</div></div>
+        ${currentUser.role !== 'employee' ? `<div class="kpi ${myPendingApprovals ? 'warn' : 'ok'}"><div class="val">${myPendingApprovals}</div><div class="lbl">بانتظار موافقتك أنت</div></div>` : ''}
+      </div>
+    </div>
+    <div class="card">
+      <h2>آخر النشاطات</h2>
+      ${recentActivityHtml()}
+    </div>
+  `;
+}
+
+function recentActivityHtml() {
+  const items = [];
+  state.requests.forEach(r => items.push({ label: `طلب ${r.type}: ${r.title}`, meta: `${r.requester} — ${r.status}` , tag: 'طلب'}));
+  state.permits.forEach(p => items.push({ label: `تصريح ${p.type}: ${p.location}`, meta: `${p.requester} — ${p.status}`, tag: 'تصريح' }));
+  state.logbook.slice(-3).forEach(l => items.push({ label: l.note, meta: `${l.author} — ${l.time}`, tag: 'مناوبة' }));
+  if (!items.length) return '<div class="status">لا توجد نشاطات بعد</div>';
+  return items.slice(-8).reverse().map(i => `
+    <div class="timeline-item">
+      <div class="timeline-type"><span class="badge neutral">${i.tag}</span></div>
+      <div>
+        <div>${i.label}</div>
+        <div class="item-meta">${i.meta}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ============ Requests ============ */
+function statusClass(status) {
+  if (status === 'معتمد نهائياً' || status === 'معتمد') return 'approved';
+  if (status === 'مرفوض') return 'rejected';
+  return 'pending';
+}
+function statusBadge(status) {
+  if (status === 'معتمد نهائياً' || status === 'معتمد') return `<span class="badge good">${status}</span>`;
+  if (status === 'مرفوض') return `<span class="badge bad">${status}</span>`;
+  return `<span class="badge mid">${status}</span>`;
+}
+
+function renderRequests() {
+  const el = document.getElementById('tab-requests');
+  const canSubmit = true; // any role can submit a request
+  el.innerHTML = `
+    ${canSubmit ? `
+    <div class="card">
+      <h2>تقديم طلب جديد</h2>
+      <label>نوع الطلب</label>
+      <select id="reqType">${Object.keys(REQUEST_TYPES).map(t => `<option>${t}</option>`).join('')}</select>
+      <label>عنوان الطلب</label>
+      <input type="text" id="reqTitle" placeholder="مثال: إجازة اعتيادية 3 أيام">
+      <label>التفاصيل</label>
+      <textarea id="reqDesc" placeholder="اكتب تفاصيل الطلب هنا..."></textarea>
+      <button onclick="submitRequest()">إرسال الطلب</button>
+    </div>` : ''}
+    <div class="card">
+      <h2>سجل الطلبات</h2>
+      <div id="requestsList"></div>
+    </div>
+  `;
+  document.getElementById('requestsList').innerHTML = state.requests.slice().reverse().map(requestCard).join('') || '<div class="status">لا توجد طلبات</div>';
+}
+
+function requestCard(r) {
+  const steps = REQUEST_TYPES[r.type];
+  const stepsHtml = steps.map((s, i) => {
+    const cls = r.status === 'مرفوض' && i === r.currentStep ? 'current'
+      : i < r.currentStep || r.status === 'معتمد نهائياً' ? 'done'
+      : i === r.currentStep && r.status === 'قيد المراجعة' ? 'current' : '';
+    return `<span class="step-chip ${cls}">${s}</span>` + (i < steps.length - 1 ? '<span class="step-arrow">←</span>' : '');
+  }).join('');
+
+  const canAct = currentUser.role !== 'employee'
+    && r.status === 'قيد المراجعة'
+    && steps[r.currentStep] === ROLE_TO_STEP[currentUser.role];
+
+  return `
+    <div class="item-card ${statusClass(r.status)}">
+      <div class="item-head">
+        <div><strong>${r.id}</strong> — ${r.title} <span class="badge neutral">${r.type}</span></div>
+        ${statusBadge(r.status)}
+      </div>
+      <div class="item-meta">مقدَّم من: ${r.requester}</div>
+      <div style="margin-top:6px; font-size:12px;">${r.description}</div>
+      <div class="steps-row">${stepsHtml}</div>
+      ${canAct ? `
+        <div class="item-actions">
+          <button class="small" onclick="actOnRequest('${r.id}', 'approve')">✔ موافقة</button>
+          <button class="small danger" onclick="actOnRequest('${r.id}', 'reject')">✘ رفض</button>
+        </div>` : ''}
+    </div>
+  `;
+}
+
+function submitRequest() {
+  const type = document.getElementById('reqType').value;
+  const title = document.getElementById('reqTitle').value.trim();
+  const description = document.getElementById('reqDesc').value.trim();
+  if (!title) return;
+  const id = 'RQ-' + (state.nextId.rq++);
+  state.requests.push({ id, type, title, description, requester: currentUser.name, currentStep: 0, status: 'قيد المراجعة', history: [] });
+  saveState();
+  render();
+}
+
+function actOnRequest(id, action) {
+  const r = state.requests.find(x => x.id === id);
+  if (!r) return;
+  const steps = REQUEST_TYPES[r.type];
+  const stepName = steps[r.currentStep];
+  r.history.push({ step: stepName, actor: currentUser.name, action: action === 'approve' ? 'موافقة' : 'رفض', date: 'الآن' });
+  if (action === 'reject') {
+    r.status = 'مرفوض';
+  } else {
+    if (r.currentStep < steps.length - 1) {
+      r.currentStep++;
+      r.status = 'قيد المراجعة';
+    } else {
+      r.status = 'معتمد نهائياً';
+    }
+  }
+  saveState();
+  render();
+}
+
+/* ============ Permits ============ */
+function renderPermits() {
+  const el = document.getElementById('tab-permits');
+  el.innerHTML = `
+    <div class="card">
+      <h2>إصدار تصريح عمل جديد</h2>
+      <label>نوع التصريح</label>
+      <select id="pmType">${PERMIT_TYPES.map(t => `<option>${t}</option>`).join('')}</select>
+      <label>الموقع</label>
+      <input type="text" id="pmLocation" placeholder="مثال: وحدة التقطير - المصفى">
+      <label>قائمة السلامة</label>
+      <div id="pmChecklist">${SAFETY_CHECKLIST.map((c, i) => `
+        <div class="checklist-item">
+          <input type="checkbox" id="chk${i}"> <label for="chk${i}" style="margin:0;color:#eee;">${c}</label>
+        </div>`).join('')}</div>
+      <button onclick="submitPermit()">إرسال التصريح للاعتماد</button>
+    </div>
+    <div class="card">
+      <h2>سجل التصاريح</h2>
+      <div id="permitsList"></div>
+    </div>
+  `;
+  document.getElementById('permitsList').innerHTML = state.permits.slice().reverse().map(permitCard).join('') || '<div class="status">لا توجد تصاريح</div>';
+}
+
+function permitCard(p) {
+  const canAct = currentUser.role !== 'employee' && p.status === 'بانتظار الموافقة';
+  const checklistHtml = SAFETY_CHECKLIST.map((c, i) => `
+    <div class="checklist-item">${p.checklist[i] ? '✅' : '⬜'} ${c}</div>
+  `).join('');
+  return `
+    <div class="item-card ${statusClass(p.status)}">
+      <div class="item-head">
+        <div><strong>${p.id}</strong> — ${p.type}</div>
+        ${statusBadge(p.status)}
+      </div>
+      <div class="item-meta">الموقع: ${p.location} | مقدَّم من: ${p.requester}</div>
+      <div style="margin-top:6px;">${checklistHtml}</div>
+      ${canAct ? `
+        <div class="item-actions">
+          <button class="small" onclick="actOnPermit('${p.id}', 'approve')">✔ اعتماد</button>
+          <button class="small danger" onclick="actOnPermit('${p.id}', 'reject')">✘ رفض</button>
+        </div>` : ''}
+    </div>
+  `;
+}
+
+function submitPermit() {
+  const type = document.getElementById('pmType').value;
+  const location = document.getElementById('pmLocation').value.trim();
+  if (!location) return;
+  const checklist = SAFETY_CHECKLIST.map((c, i) => document.getElementById('chk' + i).checked);
+  const id = 'PM-' + (state.nextId.pm++);
+  state.permits.push({ id, type, location, requester: currentUser.name, checklist, status: 'بانتظار الموافقة' });
+  saveState();
+  render();
+}
+
+function actOnPermit(id, action) {
+  const p = state.permits.find(x => x.id === id);
+  if (!p) return;
+  p.status = action === 'approve' ? 'معتمد' : 'مرفوض';
+  saveState();
+  render();
+}
+
+/* ============ Logbook ============ */
+function renderLogbook() {
+  const el = document.getElementById('tab-logbook');
+  el.innerHTML = `
+    <div class="card">
+      <h2>تسجيل قيد جديد بدفتر المناوبة</h2>
+      <label>نوع القيد</label>
+      <select id="lbType">${LOGBOOK_TYPES.map(t => `<option>${t}</option>`).join('')}</select>
+      <label>الملاحظة</label>
+      <textarea id="lbNote" placeholder="اكتب تفاصيل الحدث أو الملاحظة..."></textarea>
+      <button onclick="submitLogbook()">إضافة القيد</button>
+    </div>
+    <div class="card">
+      <h2>سجل المناوبة</h2>
+      <div class="filters">
+        <input type="text" id="lbSearch" placeholder="ابحث بالكلمة المفتاحية..." oninput="renderLogbookList()">
+        <select id="lbFilterType" onchange="renderLogbookList()">
+          <option value="">كل الأنواع</option>
+          ${LOGBOOK_TYPES.map(t => `<option>${t}</option>`).join('')}
+        </select>
+      </div>
+      <div id="logbookList"></div>
+    </div>
+  `;
+  renderLogbookList();
+}
+
+function renderLogbookList() {
+  const search = (document.getElementById('lbSearch')?.value || '').trim();
+  const filterType = document.getElementById('lbFilterType')?.value || '';
+  let items = state.logbook.slice().reverse();
+  if (search) items = items.filter(l => l.note.includes(search) || l.author.includes(search));
+  if (filterType) items = items.filter(l => l.type === filterType);
+  const typeColor = { 'عادي': 'neutral', 'تنبيه': 'mid', 'عطل': 'bad', 'تسليم مناوبة': 'good' };
+  document.getElementById('logbookList').innerHTML = items.map(l => `
+    <div class="timeline-item">
+      <div class="timeline-time">${l.time}</div>
+      <div class="timeline-type"><span class="badge ${typeColor[l.type] || 'neutral'}">${l.type}</span></div>
+      <div>
+        <div>${l.note}</div>
+        <div class="item-meta">${l.author} — مناوبة ${l.shift}</div>
+      </div>
+    </div>
+  `).join('') || '<div class="status">لا توجد نتائج مطابقة</div>';
+}
+
+function submitLogbook() {
+  const type = document.getElementById('lbType').value;
+  const note = document.getElementById('lbNote').value.trim();
+  if (!note) return;
+  const id = 'LB-' + (state.nextId.lb++);
+  const hour = new Date().getHours();
+  const shift = hour < 15 ? 'صباحية' : hour < 23 ? 'مسائية' : 'ليلية';
+  state.logbook.push({ id, time: 'الآن', shift, author: currentUser.name, type, note });
+  saveState();
+  render();
+}
+
+/* ============ About ============ */
+function renderAbout() {
+  const el = document.getElementById('tab-about');
+  el.innerHTML = `
+    <div class="card">
+      <h2>عن فكرة "منصّة"</h2>
+      <div class="note-box">
+        <p><strong>المشكلة:</strong> معظم مديريات ودوائر وزارة النفط تدير حالياً ثلاث عمليات أساسية بشكل ورقي بالكامل تقريباً: الطلبات والموافقات الإدارية (من طلب إجازة إلى أكبر طلب)، تصاريح العمل، ودفتر المناوبة اليومي. هذا يعني طباعة وأوراق مستمرة، وصعوبة بالغة في الرجوع لسجلات السنوات السابقة.</p>
+        <p><strong>الحل المقترح:</strong> منصة رقمية موحدة تدير الأنواع الثلاثة عبر واجهة واحدة: مسار موافقات إلكتروني هرمي لكل طلب حسب نوعه وحجمه، تصاريح عمل رقمية موقّعة إلكترونياً ومرتبطة بقوائم السلامة، ودفتر مناوبة رقمي قابل للبحث الفوري.</p>
+        <p><strong>القيمة المضافة:</strong></p>
+        <ul>
+          <li>توفير مستمر في تكاليف الطباعة والأرشفة الفيزيائية</li>
+          <li>تسريع دورة الاعتماد وتقليل التنقل اليدوي للأوراق بين المكاتب</li>
+          <li>الرجوع الفوري لأي سجل سابق ولو بعد سنوات، دون بحث يدوي في الأرشيف الورقي</li>
+          <li>بناء قاعدة بيانات مركزية ضخمة تتراكم سنة بعد أخرى، تفتح الباب لاحقاً لتحليلات ذكية على أنماط الطلبات والأعطال والمناوبات</li>
+        </ul>
+        <p><strong>ملاحظة:</strong> هذا نموذج تجريبي يستخدم بيانات محفوظة محلياً بالمتصفح (localStorage) لمحاكاة تجربة الاستخدام الحقيقية — جرّب تسجيل الدخول بأدوار مختلفة (موظف، مسؤول مباشر، مدير عام) لترى كيف يتغير مسار الموافقات. زر "إعادة تعيين البيانات التجريبية" بشاشة الدخول يعيد كل شي لحالته الأصلية.</p>
+      </div>
+    </div>
+  `;
+}
+</script>
+</body>
+</html>
